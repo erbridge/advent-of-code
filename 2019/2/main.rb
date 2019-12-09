@@ -8,13 +8,13 @@ def multiply(memory, parameter_a, parameter_b)
   memory[parameter_a] * memory[parameter_b]
 end
 
-def run(program)
-  program.each_slice(4) do |instruction|
+def run(memory)
+  memory.each_slice(4) do |instruction|
     case instruction[0]
     when 1
-      program[instruction[3]] = add(program, instruction[1], instruction[2])
+      memory[instruction[3]] = add(memory, instruction[1], instruction[2])
     when 2
-      program[instruction[3]] = multiply(program, instruction[1], instruction[2])
+      memory[instruction[3]] = multiply(memory, instruction[1], instruction[2])
     when 99 then break
     else raise "Unexpected opcode #{instruction[0]}"
     end
@@ -25,9 +25,19 @@ program = IO.readlines('./input.txt', ',').map do |digit|
   digit.delete_suffix(',').to_i
 end
 
-program[1] = 12
-program[2] = 2
+(0..9999).each do |input|
+  noun = input / 100
+  verb = input - (noun * 100)
 
-run(program)
+  memory = program.dup
 
-puts program[0]
+  memory[1] = noun
+  memory[2] = verb
+
+  run(memory)
+
+  if memory[0] == 19_690_720
+    puts input
+    break
+  end
+end
