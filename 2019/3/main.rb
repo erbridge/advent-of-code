@@ -16,6 +16,12 @@ def distances_from_origin(points)
   points.map { |point| point[0].abs + point[1].abs }
 end
 
+def steps_from_origin(wires, points)
+  points.map do |point|
+    wires[0].index(point) + 1 + wires[1].index(point) + 1
+  end
+end
+
 wires = IO.readlines('./input.txt').map do |instructions|
   next if instructions.empty?
 
@@ -29,4 +35,4 @@ end
 
 crossing_points = wires[0] & wires[1]
 
-puts distances_from_origin(crossing_points).min
+puts steps_from_origin(wires, crossing_points).min
