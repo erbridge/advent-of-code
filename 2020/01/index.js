@@ -9,3 +9,15 @@ module.exports = {
     }
   },
 };
+
+if (require.main === module) {
+  const { readFileSync } = require("fs");
+
+  const input = readFileSync(`${__dirname}/input.txt`, "utf8")
+    .split("\n")
+    .map((line) => parseInt(line));
+
+  const result = module.exports.checkExpenseReport(input);
+
+  console.log(result);
+}
