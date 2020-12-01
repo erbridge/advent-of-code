@@ -8,6 +8,18 @@ module.exports = {
       }
     }
   },
+
+  checkExpenseReportAgain(lines) {
+    for (const a of lines) {
+      for (const b of lines) {
+        for (const c of lines) {
+          if (a + b + c === 2020) {
+            return a * b * c;
+          }
+        }
+      }
+    }
+  },
 };
 
 if (require.main === module) {
@@ -17,7 +29,9 @@ if (require.main === module) {
     .split("\n")
     .map((line) => parseInt(line));
 
-  const result = module.exports.checkExpenseReport(input);
+  const firstResult = module.exports.checkExpenseReport(input);
+  const secondResult = module.exports.checkExpenseReportAgain(input);
 
-  console.log(result);
+  console.log(firstResult);
+  console.log(secondResult);
 }
