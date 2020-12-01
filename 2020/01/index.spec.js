@@ -1,4 +1,5 @@
 const { checkExpenseReport, checkExpenseReportAgain } = require(".");
+const readIntegersFromFile = require("../utils/readIntegersFromFile");
 
 describe("checkExpenseReport", () => {
   it("finds the product of the two entries that sum to 2020", () => {
@@ -7,6 +8,14 @@ describe("checkExpenseReport", () => {
     const result = checkExpenseReport(lines);
 
     expect(result).toEqual(514579);
+  });
+
+  it("finds the correct result from the expense report", () => {
+    const lines = readIntegersFromFile(`${__dirname}/input.txt`);
+
+    const result = checkExpenseReport(lines);
+
+    expect(result).toEqual(1007104);
   });
 });
 
@@ -17,5 +26,13 @@ describe("checkExpenseReportAgain", () => {
     const result = checkExpenseReportAgain(lines);
 
     expect(result).toEqual(241861950);
+  });
+
+  it("finds the correct result from the expense report", () => {
+    const lines = readIntegersFromFile(`${__dirname}/input.txt`);
+
+    const result = checkExpenseReportAgain(lines);
+
+    expect(result).toEqual(18847752);
   });
 });

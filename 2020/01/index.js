@@ -25,10 +25,10 @@ module.exports = {
 if (require.main === module) {
   const readIntegersFromFile = require("../utils/readIntegersFromFile");
 
-  const input = readIntegersFromFile(`${__dirname}/input.txt`, "utf8");
+  const lines = readIntegersFromFile(`${__dirname}/input.txt`);
 
-  const firstResult = module.exports.checkExpenseReport(input);
-  const secondResult = module.exports.checkExpenseReportAgain(input);
+  const firstResult = module.exports.checkExpenseReport(lines);
+  const secondResult = module.exports.checkExpenseReportAgain(lines);
 
   console.log(firstResult);
   console.log(secondResult);
