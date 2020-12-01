@@ -23,11 +23,9 @@ module.exports = {
 };
 
 if (require.main === module) {
-  const { readFileSync } = require("fs");
+  const readIntegersFromFile = require("../utils/readIntegersFromFile");
 
-  const input = readFileSync(`${__dirname}/input.txt`, "utf8")
-    .split("\n")
-    .map((line) => parseInt(line));
+  const input = readIntegersFromFile(`${__dirname}/input.txt`, "utf8");
 
   const firstResult = module.exports.checkExpenseReport(input);
   const secondResult = module.exports.checkExpenseReportAgain(input);
