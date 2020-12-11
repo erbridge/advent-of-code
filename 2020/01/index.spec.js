@@ -1,5 +1,5 @@
 const { checkExpenseReport, checkExpenseReportAgain } = require(".");
-const readIntegersFromFile = require("../utils/readIntegersFromFile");
+const readLinesFromFile = require("../utils/readLinesFromFile");
 
 describe("checkExpenseReport", () => {
   it("finds the product of the two entries that sum to 2020", () => {
@@ -11,7 +11,9 @@ describe("checkExpenseReport", () => {
   });
 
   it("finds the correct result from the expense report", () => {
-    const lines = readIntegersFromFile(`${__dirname}/input.txt`);
+    const lines = readLinesFromFile(`${__dirname}/input.txt`).map((line) =>
+      parseInt(line)
+    );
 
     const result = checkExpenseReport(lines);
 
@@ -29,7 +31,9 @@ describe("checkExpenseReportAgain", () => {
   });
 
   it("finds the correct result from the expense report", () => {
-    const lines = readIntegersFromFile(`${__dirname}/input.txt`);
+    const lines = readLinesFromFile(`${__dirname}/input.txt`).map((line) =>
+      parseInt(line)
+    );
 
     const result = checkExpenseReportAgain(lines);
 

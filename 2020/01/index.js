@@ -23,9 +23,11 @@ module.exports = {
 };
 
 if (require.main === module) {
-  const readIntegersFromFile = require("../utils/readIntegersFromFile");
+  const readLinesFromFile = require("../utils/readLinesFromFile");
 
-  const lines = readIntegersFromFile(`${__dirname}/input.txt`);
+  const lines = readLinesFromFile(`${__dirname}/input.txt`).map((line) =>
+    parseInt(line)
+  );
 
   const firstResult = module.exports.checkExpenseReport(lines);
   const secondResult = module.exports.checkExpenseReportAgain(lines);
