@@ -1,4 +1,20 @@
 module.exports = {
+  findMySeatId(lines) {
+    const seatIds = lines.map(module.exports.calculateSeatId);
+
+    seatIds.sort((a, b) => (a < b ? -1 : a === b ? 0 : 1));
+
+    let lastSeatId = seatIds[0] - 1;
+
+    for (const seatId of seatIds) {
+      if (seatId - lastSeatId !== 1) {
+        return lastSeatId + 1;
+      }
+
+      lastSeatId = seatId;
+    }
+  },
+
   findHighestSeatId(lines) {
     const seatIds = lines.map(module.exports.calculateSeatId);
 
@@ -76,6 +92,8 @@ if (require.main === module) {
   const lines = readLinesFromFile(`${__dirname}/input.txt`);
 
   const highestSeatId = module.exports.findHighestSeatId(lines);
+  const mySeatId = module.exports.findMySeatId(lines);
 
   console.log(highestSeatId);
+  console.log(mySeatId);
 }
