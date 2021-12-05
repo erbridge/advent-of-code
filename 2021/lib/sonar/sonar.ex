@@ -10,18 +10,19 @@ defmodule Advent2021.Sonar do
 
   ## Examples
 
-      iex> Advent2021.Sonar.count_depth_increases("01/example.txt")
+      iex> Advent2021.Sonar.count_depth_increases("lib/01/example.txt")
       7
 
-      iex> Advent2021.Sonar.count_depth_increases("01/example.txt", 3)
+      iex> Advent2021.Sonar.count_depth_increases("lib/01/example.txt", 3)
       5
 
   """
   def count_depth_increases(input_path, width \\ 1) do
-    input = read_input(input_path)
-    measurements = parse_depths(input)
-    changes = depth_changes(measurements, width)
-    Enum.count(changes, fn change -> change == :increase end)
+    input_path
+    |> read_input()
+    |> parse_depths()
+    |> depth_changes(width)
+    |> Enum.count(fn change -> change == :increase end)
   end
 
   @spec read_input(binary) :: :eof | binary | [binary | char] | {:error, any}
@@ -30,7 +31,7 @@ defmodule Advent2021.Sonar do
 
   ## Examples
 
-      iex> Advent2021.Sonar.read_input("01/example.txt")
+      iex> Advent2021.Sonar.read_input("lib/01/example.txt")
       "199\\n200\\n208\\n210\\n200\\n207\\n240\\n269\\n260\\n263\\n"
 
   """
@@ -50,8 +51,9 @@ defmodule Advent2021.Sonar do
 
   """
   def parse_depths(input) do
-    lines = String.split(input)
-    Enum.map(lines, fn line -> String.to_integer(line) end)
+    input
+    |> String.split()
+    |> Enum.map(fn line -> String.to_integer(line) end)
   end
 
   @spec depth_changes([integer], non_neg_integer) :: [:increase | :decrease | :equal]
@@ -69,17 +71,14 @@ defmodule Advent2021.Sonar do
 
   """
   def depth_changes(measurements, width \\ 1) do
-    shifted_slices =
-      Enum.map(
-        0..(width - 1),
-        fn w ->
-          if w > 0,
-            do: Enum.slice(measurements, w, length(measurements)),
-            else: measurements
-        end
-      )
-
-    moving_sum_depths = Enum.zip_with(shifted_slices, fn cross_slice -> Enum.sum(cross_slice) end)
+    moving_sum_depths =
+      0..(width - 1)
+      |> Enum.map(fn w ->
+        if w > 0,
+          do: Enum.slice(measurements, w, length(measurements)),
+          else: measurements
+      end)
+      |> Enum.zip_with(fn cross_slice -> Enum.sum(cross_slice) end)
 
     Enum.zip_with(
       moving_sum_depths,

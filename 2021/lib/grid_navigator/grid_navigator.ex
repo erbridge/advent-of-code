@@ -9,14 +9,15 @@ defmodule Advent2021.GridNavigator do
 
   ## Examples
 
-      iex> Advent2021.GridNavigator.final_position("02/example.txt")
+      iex> Advent2021.GridNavigator.final_position("lib/02/example.txt")
       {15, 10}
 
   """
   def final_position(input_path) do
-    input = read_input(input_path)
-    commands = parse_commands(input)
-    position_after(commands)
+    input_path
+    |> read_input()
+    |> parse_commands()
+    |> position_after()
   end
 
   @spec read_input(binary) :: :eof | binary | [binary | char] | {:error, any}
@@ -25,7 +26,7 @@ defmodule Advent2021.GridNavigator do
 
   ## Examples
 
-      iex> Advent2021.GridNavigator.read_input("02/example.txt")
+      iex> Advent2021.GridNavigator.read_input("lib/02/example.txt")
       "forward 5\\ndown 5\\nforward 8\\nup 3\\ndown 8\\nforward 2\\n"
 
   """
@@ -45,8 +46,10 @@ defmodule Advent2021.GridNavigator do
 
   """
   def parse_commands(input) do
-    trimmed_input = String.trim(input)
-    command_strings = String.split(trimmed_input, "\n")
+    command_strings =
+      input
+      |> String.trim()
+      |> String.split("\n")
 
     Enum.map(
       command_strings,
