@@ -3,7 +3,7 @@ defmodule Advent2021.Sonar do
   Documentation for `Advent2021.Sonar`.
   """
 
-  @spec count_depth_increases(binary) :: non_neg_integer
+  @spec count_depth_increases(binary, non_neg_integer) :: non_neg_integer
   @doc """
   Count the number of measurements larger than the previous one in the input
   file.
@@ -13,11 +13,14 @@ defmodule Advent2021.Sonar do
       iex> Advent2021.Sonar.count_depth_increases("01/example.txt")
       7
 
+      iex> Advent2021.Sonar.count_depth_increases("01/example.txt", 3)
+      5
+
   """
-  def count_depth_increases(input_path) do
+  def count_depth_increases(input_path, width \\ 1) do
     input = read_input(input_path)
     measurements = parse_depths(input)
-    changes = depth_changes(measurements)
+    changes = depth_changes(measurements, width)
     Enum.count(changes, fn change -> change == :increase end)
   end
 
@@ -51,7 +54,7 @@ defmodule Advent2021.Sonar do
     Enum.map(lines, fn line -> String.to_integer(line) end)
   end
 
-  @spec depth_changes([integer]) :: [:increase | :decrease | :equal]
+  @spec depth_changes([integer], non_neg_integer) :: [:increase | :decrease | :equal]
   @doc """
   Convert the list of measurements into a list of :increase, :decrease, and
   :equal based on the change between values.
@@ -61,11 +64,26 @@ defmodule Advent2021.Sonar do
       iex> Advent2021.Sonar.depth_changes([100, 101, 99])
       [:increase, :decrease]
 
+      iex> Advent2021.Sonar.depth_changes([100, 101, 99, 100, 99, 200, 300], 3)
+      [:equal, :decrease, :increase, :increase]
+
   """
-  def depth_changes(measurements) do
+  def depth_changes(measurements, width \\ 1) do
+    shifted_slices =
+      Enum.map(
+        0..(width - 1),
+        fn w ->
+          if w > 0,
+            do: Enum.slice(measurements, w, length(measurements)),
+            else: measurements
+        end
+      )
+
+    moving_sum_depths = Enum.zip_with(shifted_slices, fn cross_slice -> Enum.sum(cross_slice) end)
+
     Enum.zip_with(
-      measurements,
-      Enum.slice(measurements, 1, length(measurements)),
+      moving_sum_depths,
+      Enum.slice(moving_sum_depths, 1, length(moving_sum_depths)),
       fn a, b ->
         depth_change(a, b)
       end
