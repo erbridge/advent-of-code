@@ -22,7 +22,7 @@ defmodule Advent2021.Sonar do
     |> read_input()
     |> parse_depths()
     |> depth_changes(width)
-    |> Enum.count(fn change -> change == :increase end)
+    |> Enum.count(&(&1 == :increase))
   end
 
   @spec read_input(binary) :: :eof | binary | [binary | char] | {:error, any}
@@ -53,7 +53,7 @@ defmodule Advent2021.Sonar do
   def parse_depths(input) do
     input
     |> String.split()
-    |> Enum.map(fn line -> String.to_integer(line) end)
+    |> Enum.map(&String.to_integer/1)
   end
 
   @spec depth_changes([integer], non_neg_integer) :: [:increase | :decrease | :equal]
@@ -78,14 +78,12 @@ defmodule Advent2021.Sonar do
           do: Enum.slice(measurements, w, length(measurements)),
           else: measurements
       end)
-      |> Enum.zip_with(fn cross_slice -> Enum.sum(cross_slice) end)
+      |> Enum.zip_with(&Enum.sum/1)
 
     Enum.zip_with(
       moving_sum_depths,
       Enum.slice(moving_sum_depths, 1, length(moving_sum_depths)),
-      fn a, b ->
-        depth_change(a, b)
-      end
+      &depth_change/2
     )
   end
 
