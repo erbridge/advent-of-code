@@ -1,6 +1,6 @@
-defmodule Advent2021.Navigator do
+defmodule Advent2021.GridNavigator do
   @moduledoc """
-  Documentation for `Advent2021.Navigator`.
+  Documentation for `Advent2021.GridNavigator`.
   """
 
   @spec final_position(binary) :: {integer, integer}
@@ -9,7 +9,7 @@ defmodule Advent2021.Navigator do
 
   ## Examples
 
-      iex> Advent2021.Navigator.final_position("02/example.txt")
+      iex> Advent2021.GridNavigator.final_position("02/example.txt")
       {15, 10}
 
   """
@@ -25,7 +25,7 @@ defmodule Advent2021.Navigator do
 
   ## Examples
 
-      iex> Advent2021.Navigator.read_input("02/example.txt")
+      iex> Advent2021.GridNavigator.read_input("02/example.txt")
       "forward 5\\ndown 5\\nforward 8\\nup 3\\ndown 8\\nforward 2\\n"
 
   """
@@ -40,7 +40,7 @@ defmodule Advent2021.Navigator do
 
   ## Examples
 
-      iex> Advent2021.Navigator.parse_commands("forward 1\\ndown 2\\nup 3\\n")
+      iex> Advent2021.GridNavigator.parse_commands("forward 1\\ndown 2\\nup 3\\n")
       [{:forward, 1}, {:down, 2}, {:up, 3}]
 
   """
@@ -66,12 +66,12 @@ defmodule Advent2021.Navigator do
 
   ## Examples
 
-      iex> Advent2021.Navigator.position_after(
+      iex> Advent2021.GridNavigator.position_after(
       ...>   [{:forward, 1}, {:down, 2}, {:up, 3}]
       ...> )
       {1, -1}
 
-      iex> Advent2021.Navigator.position_after(
+      iex> Advent2021.GridNavigator.position_after(
       ...>   [{:forward, 1}, {:down, 2}, {:up, 3}],
       ...>   2
       ...> )
