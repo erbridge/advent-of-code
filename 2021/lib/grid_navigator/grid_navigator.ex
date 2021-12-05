@@ -3,6 +3,8 @@ defmodule Advent2021.GridNavigator do
   Documentation for `Advent2021.GridNavigator`.
   """
 
+  import Advent2021.Reader
+
   @spec final_position(binary) :: {integer, integer}
   @doc """
   Find the final position after following the commands in the input file.
@@ -15,49 +17,23 @@ defmodule Advent2021.GridNavigator do
   """
   def final_position(input_path) do
     input_path
-    |> read_input()
-    |> parse_commands()
+    |> parse_input(&parse_command/1)
     |> position_after()
   end
 
-  @spec read_input(binary) :: :eof | binary | [binary | char] | {:error, any}
+  @spec parse_command(String.t()) :: {:forward | :down | :up, integer}
   @doc """
-  Read the input from the input path.
+  Parse a raw command.
 
   ## Examples
 
-      iex> Advent2021.GridNavigator.read_input("lib/02/example.txt")
-      "forward 5\\ndown 5\\nforward 8\\nup 3\\ndown 8\\nforward 2\\n"
+      iex> Advent2021.GridNavigator.parse_command("forward 1")
+      {:forward, 1}
 
   """
-  def read_input(path) do
-    {:ok, file} = File.open(path, [:read])
-    IO.read(file, :eof)
-  end
-
-  @spec parse_commands(binary) :: [{:forward | :down | :up, integer}]
-  @doc """
-  Parse the raw input into a list of commands.
-
-  ## Examples
-
-      iex> Advent2021.GridNavigator.parse_commands("forward 1\\ndown 2\\nup 3\\n")
-      [{:forward, 1}, {:down, 2}, {:up, 3}]
-
-  """
-  def parse_commands(input) do
-    command_strings =
-      input
-      |> String.trim()
-      |> String.split("\n")
-
-    Enum.map(
-      command_strings,
-      fn command ->
-        [direction, distance] = String.split(command)
-        {String.to_atom(direction), String.to_integer(distance)}
-      end
-    )
+  def parse_command(raw_command) do
+    [direction, distance] = String.split(raw_command)
+    {String.to_atom(direction), String.to_integer(distance)}
   end
 
   @spec position_after(

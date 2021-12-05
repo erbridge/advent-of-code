@@ -3,6 +3,8 @@ defmodule Advent2021.Sonar do
   Documentation for `Advent2021.Sonar`.
   """
 
+  import Advent2021.Reader
+
   @spec count_depth_increases(binary, non_neg_integer) :: non_neg_integer
   @doc """
   Count the number of measurements larger than the previous one in the input
@@ -19,41 +21,9 @@ defmodule Advent2021.Sonar do
   """
   def count_depth_increases(input_path, width \\ 1) do
     input_path
-    |> read_input()
-    |> parse_depths()
+    |> parse_input(&String.to_integer/1)
     |> depth_changes(width)
     |> Enum.count(&(&1 == :increase))
-  end
-
-  @spec read_input(binary) :: :eof | binary | [binary | char] | {:error, any}
-  @doc """
-  Read the input from the input path.
-
-  ## Examples
-
-      iex> Advent2021.Sonar.read_input("lib/01/example.txt")
-      "199\\n200\\n208\\n210\\n200\\n207\\n240\\n269\\n260\\n263\\n"
-
-  """
-  def read_input(path) do
-    {:ok, file} = File.open(path, [:read])
-    IO.read(file, :eof)
-  end
-
-  @spec parse_depths(binary) :: [integer]
-  @doc """
-  Parse the raw input into a list.
-
-  ## Examples
-
-      iex> Advent2021.Sonar.parse_depths("100\\n200\\n300\\n")
-      [100, 200, 300]
-
-  """
-  def parse_depths(input) do
-    input
-    |> String.split()
-    |> Enum.map(&String.to_integer/1)
   end
 
   @spec depth_changes([integer], non_neg_integer) :: [:increase | :decrease | :equal]
