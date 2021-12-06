@@ -13,7 +13,7 @@ defmodule Advent2021.GridNavigator do
   ## Examples
 
       iex> Advent2021.GridNavigator.final_position("lib/02/example.txt")
-      {15, 10}
+      {15, 10, 0}
 
   """
   def final_position(input_path) do
@@ -31,21 +31,21 @@ defmodule Advent2021.GridNavigator do
 
   ## Examples
 
-      iex> Advent2021.GridNavigator.follow_command({:forward, 3}, {10, 10})
-      {13, 10}
+      iex> Advent2021.GridNavigator.follow_command({:forward, 3}, {10, 10, 0})
+      {13, 10, 0}
 
-      iex> Advent2021.GridNavigator.follow_command({:down, 3}, {10, 10})
-      {10, 13}
+      iex> Advent2021.GridNavigator.follow_command({:down, 3}, {10, 10, 0})
+      {10, 13, 0}
 
-      iex> Advent2021.GridNavigator.follow_command({:up, 3}, {10, 10})
-      {10, 7}
+      iex> Advent2021.GridNavigator.follow_command({:up, 3}, {10, 10, 0})
+      {10, 7, 0}
 
   """
-  def follow_command({direction, distance}, {horizontal, depth}) do
+  def follow_command({direction, distance}, {horizontal, depth, bearing}) do
     case direction do
-      :forward -> {horizontal + distance, depth}
-      :down -> {horizontal, depth + distance}
-      :up -> {horizontal, depth - distance}
+      :forward -> {horizontal + distance, depth, bearing}
+      :down -> {horizontal, depth + distance, bearing}
+      :up -> {horizontal, depth - distance, bearing}
     end
   end
 end

@@ -4,7 +4,7 @@ defmodule Advent2021.Navigator do
   """
 
   @type command :: {:forward | :down | :up, integer}
-  @type position :: {integer, integer}
+  @type position :: {integer, integer, integer}
 
   @spec parse_command(String.t()) :: command
   @doc """
@@ -30,19 +30,19 @@ defmodule Advent2021.Navigator do
       iex> Advent2021.Navigator.follow_commands(
       ...>   [{:forward, 1}, {:down, 2}, {:up, 3}],
       ...>   fn command, acc ->
-      ...>     {horizontal, depth} = acc
+      ...>     {horizontal, depth, bearing} = acc
       ...>
       ...>     case command do
-      ...>       {:forward, distance} -> {horizontal + distance, depth}
-      ...>       {:down, distance} -> {horizontal, depth + distance}
-      ...>       {:up, distance} -> {horizontal, depth - distance}
+      ...>       {:forward, distance} -> {horizontal + distance, depth, bearing}
+      ...>       {:down, distance} -> {horizontal, depth + distance, bearing}
+      ...>       {:up, distance} -> {horizontal, depth - distance, bearing}
       ...>     end
       ...>   end
       ...> )
-      {1, -1}
+      {1, -1, 0}
 
   """
   def follow_commands(commands, reducer) do
-    Enum.reduce(commands, {0, 0}, &reducer.(&1, &2))
+    Enum.reduce(commands, {0, 0, 0}, &reducer.(&1, &2))
   end
 end
