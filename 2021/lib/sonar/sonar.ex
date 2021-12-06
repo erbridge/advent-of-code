@@ -5,7 +5,7 @@ defmodule Advent2021.Sonar do
 
   import Advent2021.Reader
 
-  @spec count_depth_increases(binary, non_neg_integer) :: non_neg_integer
+  @spec count_depth_increases(String.t(), non_neg_integer) :: non_neg_integer
   @doc """
   Count the number of measurements larger than the previous one in the input
   file.

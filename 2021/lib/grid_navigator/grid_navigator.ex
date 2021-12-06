@@ -3,9 +3,10 @@ defmodule Advent2021.GridNavigator do
   Documentation for `Advent2021.GridNavigator`.
   """
 
+  import Advent2021.Navigator
   import Advent2021.Reader
 
-  @spec final_position(binary) :: {integer, integer}
+  @spec final_position(String.t()) :: Advent2021.Navigator.position()
   @doc """
   Find the final position after following the commands in the input file.
 
@@ -18,59 +19,33 @@ defmodule Advent2021.GridNavigator do
   def final_position(input_path) do
     input_path
     |> parse_input(&parse_command/1)
-    |> position_after()
+    |> follow_commands(&follow_command/2)
   end
 
-  @spec parse_command(String.t()) :: {:forward | :down | :up, integer}
-  @doc """
-  Parse a raw command.
-
-  ## Examples
-
-      iex> Advent2021.GridNavigator.parse_command("forward 1")
-      {:forward, 1}
-
-  """
-  def parse_command(raw_command) do
-    [direction, distance] = String.split(raw_command)
-    {String.to_atom(direction), String.to_integer(distance)}
-  end
-
-  @spec position_after(
-          [{:forward | :down | :up, integer}],
-          false | nil | non_neg_integer
-        ) :: {integer, integer}
+  @spec follow_command(
+          Advent2021.Navigator.command(),
+          Advent2021.Navigator.position()
+        ) :: Advent2021.Navigator.position()
   @doc """
   Find the coordinates after following a series of commands.
 
   ## Examples
 
-      iex> Advent2021.GridNavigator.position_after(
-      ...>   [{:forward, 1}, {:down, 2}, {:up, 3}]
-      ...> )
-      {1, -1}
+      iex> Advent2021.GridNavigator.follow_command({:forward, 3}, {10, 10})
+      {13, 10}
 
-      iex> Advent2021.GridNavigator.position_after(
-      ...>   [{:forward, 1}, {:down, 2}, {:up, 3}],
-      ...>   2
-      ...> )
-      {1, 2}
+      iex> Advent2021.GridNavigator.follow_command({:down, 3}, {10, 10})
+      {10, 13}
+
+      iex> Advent2021.GridNavigator.follow_command({:up, 3}, {10, 10})
+      {10, 7}
 
   """
-  def position_after(commands, count \\ nil) do
-    included_commands =
-      if count,
-        do: Enum.slice(commands, 0, count),
-        else: commands
-
-    Enum.reduce(included_commands, {0, 0}, fn command, acc ->
-      {horizontal, depth} = acc
-
-      case command do
-        {:forward, distance} -> {horizontal + distance, depth}
-        {:down, distance} -> {horizontal, depth + distance}
-        {:up, distance} -> {horizontal, depth - distance}
-      end
-    end)
+  def follow_command({direction, distance}, {horizontal, depth}) do
+    case direction do
+      :forward -> {horizontal + distance, depth}
+      :down -> {horizontal, depth + distance}
+      :up -> {horizontal, depth - distance}
+    end
   end
 end
