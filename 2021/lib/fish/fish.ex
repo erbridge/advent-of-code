@@ -25,11 +25,49 @@ defmodule Advent2021.Fish do
         days_to_simulate,
         options \\ [days_to_spawn: 7, initial_days_to_spawn: 9]
       ) do
-    input_path
-    |> parse_input(&parse_state/1)
-    |> List.flatten()
+    initial_timers(input_path, options)
     |> step_for(days_to_simulate, options)
-    |> Enum.count()
+    |> Map.values()
+    |> Enum.sum()
+  end
+
+  @spec initial_timers(
+          String.t(),
+          days_to_spawn: pos_integer,
+          initial_days_to_spawn: pos_integer
+        ) :: %{non_neg_integer => non_neg_integer}
+  @doc """
+  Create timers with the initial state.
+
+  ## Examples
+
+      iex> Advent2021.Fish.initial_timers(
+      ...>   "lib/06/example.txt",
+      ...>   days_to_spawn: 7,
+      ...>   initial_days_to_spawn: 9
+      ...> )
+      %{0 => 0, 1 => 1, 2 => 1, 3 => 2, 4 => 1, 5 => 0, 6 => 0, 7 => 0, 8 => 0}
+
+  """
+  def initial_timers(
+        input_path,
+        days_to_spawn: days_to_spawn,
+        initial_days_to_spawn: initial_days_to_spawn
+      ) do
+    max_timer =
+      [days_to_spawn, initial_days_to_spawn]
+      |> Enum.max()
+      |> Kernel.-(1)
+
+    initial_timers =
+      input_path
+      |> parse_input(&parse_state/1)
+      |> List.flatten()
+      |> Enum.frequencies()
+
+    0..max_timer
+    |> Map.new(&{&1, 0})
+    |> Map.merge(initial_timers)
   end
 
   @spec parse_state(String.t()) :: [non_neg_integer]
@@ -49,81 +87,109 @@ defmodule Advent2021.Fish do
   end
 
   @spec step_for(
-          [non_neg_integer],
+          %{non_neg_integer => non_neg_integer},
           pos_integer,
           days_to_spawn: pos_integer,
           initial_days_to_spawn: pos_integer
-        ) :: [non_neg_integer]
+        ) :: %{non_neg_integer => non_neg_integer}
   @doc """
   Run the simulation for the given number of steps.
 
   ## Examples
 
       iex> Advent2021.Fish.step_for(
-      ...>   [3, 4, 3, 1, 2],
+      ...>   %{
+      ...>     0 => 0,
+      ...>     1 => 1,
+      ...>     2 => 1,
+      ...>     3 => 2,
+      ...>     4 => 1,
+      ...>     5 => 0,
+      ...>     6 => 0,
+      ...>     7 => 0,
+      ...>     8 => 0
+      ...>   },
       ...>   3,
       ...>   days_to_spawn: 7,
       ...>   initial_days_to_spawn: 9
       ...> )
-      [0, 1, 0, 5, 6, 7, 8]
+      %{0 => 2, 1 => 1, 2 => 0, 3 => 0, 4 => 0, 5 => 1, 6 => 1, 7 => 1, 8 => 1}
 
   """
-  def step_for(fish, 0, _options) do
-    fish
+  def step_for(fish_timers, 0, _options) do
+    fish_timers
   end
 
-  def step_for(fish, days_to_simulate, options) do
-    fish
+  def step_for(fish_timers, days_to_simulate, options) do
+    fish_timers
     |> step(options)
     |> step_for(days_to_simulate - 1, options)
   end
 
   @spec step(
-          [non_neg_integer],
+          %{non_neg_integer => non_neg_integer},
           days_to_spawn: pos_integer,
           initial_days_to_spawn: pos_integer
-        ) :: [non_neg_integer]
+        ) :: %{non_neg_integer => non_neg_integer}
   @doc """
   Run the simulation for a step.
 
   ## Examples
 
       iex> Advent2021.Fish.step(
-      ...>   [3, 4, 3, 1, 2],
+      ...>   %{
+      ...>     0 => 0,
+      ...>     1 => 1,
+      ...>     2 => 1,
+      ...>     3 => 2,
+      ...>     4 => 1,
+      ...>     5 => 0,
+      ...>     6 => 0,
+      ...>     7 => 0,
+      ...>     8 => 0
+      ...>   },
       ...>   days_to_spawn: 7,
       ...>   initial_days_to_spawn: 9
       ...> )
-      [2, 3, 2, 0, 1]
+      %{0 => 1, 1 => 1, 2 => 2, 3 => 1, 4 => 0, 5 => 0, 6 => 0, 7 => 0, 8 => 0}
 
       iex> Advent2021.Fish.step(
-      ...>   [0, 1, 0, 5, 6, 7, 8],
+      ...>   %{
+      ...>     0 => 2,
+      ...>     1 => 1,
+      ...>     2 => 0,
+      ...>     3 => 0,
+      ...>     4 => 0,
+      ...>     5 => 1,
+      ...>     6 => 1,
+      ...>     7 => 1,
+      ...>     8 => 1
+      ...>   },
       ...>   days_to_spawn: 7,
       ...>   initial_days_to_spawn: 9
       ...> )
-      [6, 0, 6, 4, 5, 6, 7, 8, 8]
+      %{0 => 1, 1 => 0, 2 => 0, 3 => 0, 4 => 1, 5 => 1, 6 => 3, 7 => 1, 8 => 2}
 
   """
   def step(
-        fish,
+        fish_timers,
         days_to_spawn: days_to_spawn,
         initial_days_to_spawn: initial_days_to_spawn
       ) do
-    newborn_fish =
-      fish
-      |> Enum.count(&(&1 == 0))
-      |> then(&List.duplicate(initial_days_to_spawn - 1, &1))
+    max_timer =
+      [days_to_spawn, initial_days_to_spawn]
+      |> Enum.max()
+      |> Kernel.-(1)
 
-    current_fish =
-      fish
-      |> Enum.map(fn f ->
-        f
-        |> case do
-          x when x <= 0 -> x + days_to_spawn
-          x -> x
-        end
-        |> Kernel.-(1)
-      end)
+    reproducers_count = fish_timers[0]
 
-    current_fish ++ newborn_fish
+    fish_timers
+    |> Map.values()
+    |> Enum.drop(1)
+    |> Kernel.++([0])
+    |> then(&Enum.zip(0..max_timer, &1))
+    |> Map.new()
+    |> Map.update!(days_to_spawn - 1, &Kernel.+(&1, reproducers_count))
+    |> Map.update!(initial_days_to_spawn - 1, &Kernel.+(&1, reproducers_count))
   end
 end
