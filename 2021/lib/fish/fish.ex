@@ -19,6 +19,9 @@ defmodule Advent2021.Fish do
       iex> Advent2021.Fish.simulate_growth("lib/06/example.txt", 80)
       5934
 
+      iex> Advent2021.Fish.simulate_growth("lib/06/example.txt", 256)
+      26984457539
+
   """
   def simulate_growth(
         input_path,
