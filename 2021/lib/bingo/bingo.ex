@@ -28,6 +28,23 @@ defmodule Advent2021.Bingo do
     score(input_boards_path, input_numbers_path, &play_to_win/2)
   end
 
+  @spec losing_score(String.t(), String.t()) :: non_neg_integer
+  @doc """
+  Find the losing score!
+
+  ## Examples
+
+      iex> Advent2021.Bingo.losing_score(
+      ...>   "lib/04/example_boards.txt",
+      ...>   "lib/04/example_numbers.txt"
+      ...> )
+      1924
+
+  """
+  def losing_score(input_boards_path, input_numbers_path) do
+    score(input_boards_path, input_numbers_path, &play_to_lose/2)
+  end
+
   @spec score(
           String.t(),
           String.t(),
@@ -155,6 +172,58 @@ defmodule Advent2021.Bingo do
       %{number: number, board: List.first(winning_boards)}
     else
       play_to_win(updated_boards, remaining_numbers)
+    end
+  end
+
+  @spec play_to_lose(board_collection, numbers) ::
+          %{number: entry, board: board}
+  @doc """
+  Play until there's a winning board.
+
+  ## Examples
+
+      iex> Advent2021.Bingo.play_to_lose(
+      ...>   [
+      ...>     [
+      ...>       [23, 100, 14, 20, 2],
+      ...>       [8, 2, 23, 4, 24],
+      ...>       [21, 9, 14, 16, 7],
+      ...>       [6, 10, 3, 18, 5],
+      ...>       [1, 12, 20, 15, 19]
+      ...>     ],
+      ...>     [
+      ...>       [22, 13, 17, 11, 0],
+      ...>       [8, 2, 23, 4, 24],
+      ...>       [21, 9, 14, 16, 7],
+      ...>       [6, 10, 3, 18, 5],
+      ...>       [1, 12, 20, 15, 19]
+      ...>     ]
+      ...>   ],
+      ...>   [23, 100, 14, 20, 2, 3, 17, 5, 21]
+      ...> )
+      %{
+        number: 17,
+        board: [
+          [22, 13, nil, 11, 0],
+          [8, nil, nil, 4, 24],
+          [21, 9, nil, 16, 7],
+          [6, 10, nil, 18, 5],
+          [1, 12, nil, 15, 19]
+        ]
+      }
+
+  """
+  def play_to_lose(boards, numbers) do
+    {number, remaining_numbers} = List.pop_at(numbers, 0)
+
+    updated_boards = take_turn_for_all(boards, number)
+
+    {winning_boards, remaining_boards} = winners(updated_boards)
+
+    if length(remaining_boards) == 0 do
+      %{number: number, board: List.first(winning_boards)}
+    else
+      play_to_lose(remaining_boards, remaining_numbers)
     end
   end
 
