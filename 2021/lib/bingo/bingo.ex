@@ -123,7 +123,7 @@ defmodule Advent2021.Bingo do
 
     updated_boards = take_turn_for_all(boards, number)
 
-    winning_board = winner(updated_boards)
+    {winning_board, _} = winner(updated_boards)
 
     if winning_board do
       %{number: number, winner: winning_board}
@@ -245,9 +245,13 @@ defmodule Advent2021.Bingo do
     end)
   end
 
-  @spec winner([[[non_neg_integer]]]) :: [[non_neg_integer]] | nil
+  @spec winner([[[non_neg_integer]]]) :: {
+          [[non_neg_integer]] | nil,
+          [[[non_neg_integer]]]
+        }
   @doc """
-  Return the first winning board if there is one.
+  Return the first winning board if there is one and the remaining boards
+  without the winner.
 
   ## Examples
 
@@ -260,13 +264,16 @@ defmodule Advent2021.Bingo do
       ...>     [1, 12, 20, 15, 19]
       ...>   ]
       ...> ])
-      [
-        [22, 13, 17, 11, 0],
-        [8, 2, 23, 4, 24],
-        [21, 9, 14, 16, 7],
-        [nil, nil, nil, nil, nil],
-        [1, 12, 20, 15, 19]
-      ]
+      {
+        [
+          [22, 13, 17, 11, 0],
+          [8, 2, 23, 4, 24],
+          [21, 9, 14, 16, 7],
+          [nil, nil, nil, nil, nil],
+          [1, 12, 20, 15, 19]
+        ],
+        []
+      }
 
       iex> Advent2021.Bingo.winner([
       ...>   [
@@ -277,13 +284,16 @@ defmodule Advent2021.Bingo do
       ...>     [1, 12, nil, 15, 19]
       ...>   ]
       ...> ])
-      [
-        [22, 13, nil, 11, 0],
-        [8, 2, nil, 4, 24],
-        [21, 9, nil, 16, 7],
-        [6, 10, nil, 18, 5],
-        [1, 12, nil, 15, 19]
-      ]
+      {
+        [
+          [22, 13, nil, 11, 0],
+          [8, 2, nil, 4, 24],
+          [21, 9, nil, 16, 7],
+          [6, 10, nil, 18, 5],
+          [1, 12, nil, 15, 19]
+        ],
+        []
+      }
 
       iex> Advent2021.Bingo.winner([
       ...>   [
@@ -294,7 +304,18 @@ defmodule Advent2021.Bingo do
       ...>     [1, 12, 20, 15, nil]
       ...>   ]
       ...> ])
-      nil
+      {
+        nil,
+        [
+          [
+            [nil, 13, 17, 11, 0],
+            [8, nil, 23, 4, 24],
+            [21, 9, nil, 16, 7],
+            [6, 10, 3, nil, 5],
+            [1, 12, 20, 15, nil]
+          ]
+        ]
+      }
 
       iex> Advent2021.Bingo.winner([
       ...>   [
@@ -305,11 +326,24 @@ defmodule Advent2021.Bingo do
       ...>     [1, 12, 20, 15, 19]
       ...>   ]
       ...> ])
-      nil
+      {
+        nil,
+        [
+          [
+            [22, 13, 17, 11, 0],
+            [8, 2, 23, 4, 24],
+            [21, 9, 14, 16, 7],
+            [6, 10, 3, 18, 5],
+            [1, 12, 20, 15, 19]
+          ]
+        ]
+      }
 
   """
   def winner(boards) do
-    Enum.find(boards, &winner?/1)
+    boards
+    |> Enum.find(&winner?/1)
+    |> then(&{&1, List.delete(boards, &1)})
   end
 
   @spec winner?([non_neg_integer]) :: boolean
