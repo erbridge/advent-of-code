@@ -5,6 +5,25 @@ defmodule Advent2021.SegmentDisplays do
 
   import Advent2021.Reader
 
+  @spec sum_outputs(String.t()) :: non_neg_integer
+  @doc """
+  Return the sum of the output displays.
+
+  ## Examples
+
+      iex> Advent2021.SegmentDisplays.sum_outputs("lib/08/example.txt")
+      61229
+
+  """
+  def sum_outputs(input_path) do
+    input_path
+    |> parse_input(&parse_display/1)
+    |> Enum.map(fn %{patterns: patterns, output: output} ->
+      decode(patterns, output)
+    end)
+    |> Enum.sum()
+  end
+
   @spec count_unique_outputs(String.t()) :: non_neg_integer
   @doc """
   Count the number of 1, 4, 7, and 8 digits in the output displays.
@@ -69,6 +88,140 @@ defmodule Advent2021.SegmentDisplays do
     end)
     |> Enum.map(fn pattern -> Enum.map(pattern, &Enum.sort/1) end)
     |> then(&%{patterns: List.first(&1), output: List.last(&1)})
+  end
+
+  @spec decode([String.t()], [String.t()]) :: non_neg_integer
+  @doc """
+  Decode the display from the pattern list.
+
+  ## Examples
+
+      iex> Advent2021.SegmentDisplays.decode(
+      ...>   [
+      ...>     ["b", "e"],
+      ...>     ["a", "b", "c", "d", "e", "f", "g"],
+      ...>     ["b", "c", "d", "e", "f", "g"],
+      ...>     ["a", "c", "d", "e", "f", "g"],
+      ...>     ["b", "c", "e", "g"],
+      ...>     ["c", "d", "e", "f", "g"],
+      ...>     ["a", "b", "d", "e", "f", "g"],
+      ...>     ["b", "c", "d", "e", "f"],
+      ...>     ["a", "b", "c", "d", "f"],
+      ...>     ["b", "d", "e"]
+      ...>   ],
+      ...>   [
+      ...>     ["a", "b", "c", "d", "e", "f", "g"],
+      ...>     ["b", "c", "d", "e", "f"],
+      ...>     ["b", "c", "d", "e", "f", "g"],
+      ...>     ["b", "c", "e", "g"],
+      ...>   ]
+      ...> )
+      8394
+
+  """
+  def decode(patterns, display) do
+    pattern_codex = codex(patterns)
+
+    display
+    |> Enum.map(fn digit -> Enum.find_index(pattern_codex, &(&1 == digit)) end)
+    |> Enum.map(&Integer.to_string/1)
+    |> Enum.join()
+    |> String.to_integer()
+  end
+
+  @spec codex([String.t()]) :: [[String.t()]]
+  @doc """
+  Create a codex to map patterns to the digits they represent.
+
+  ## Examples
+
+      iex> Advent2021.SegmentDisplays.codex([
+      ...>   ["b", "e"],
+      ...>   ["a", "b", "c", "d", "e", "f", "g"],
+      ...>   ["b", "c", "d", "e", "f", "g"],
+      ...>   ["a", "c", "d", "e", "f", "g"],
+      ...>   ["b", "c", "e", "g"],
+      ...>   ["c", "d", "e", "f", "g"],
+      ...>   ["a", "b", "d", "e", "f", "g"],
+      ...>   ["b", "c", "d", "e", "f"],
+      ...>   ["a", "b", "c", "d", "f"],
+      ...>   ["b", "d", "e"]
+      ...> ])
+      [
+        ["a", "b", "d", "e", "f", "g"],
+        ["b", "e"],
+        ["a", "b", "c", "d", "f"],
+        ["b", "c", "d", "e", "f"],
+        ["b", "c", "e", "g"],
+        ["c", "d", "e", "f", "g"],
+        ["a", "c", "d", "e", "f", "g"],
+        ["b", "d", "e"],
+        ["a", "b", "c", "d", "e", "f", "g"],
+        ["b", "c", "d", "e", "f", "g"]
+      ]
+
+  """
+  def codex(patterns) do
+    %{
+      one: one,
+      four: four,
+      seven: seven,
+      eight: eight,
+      two_three_five: two_three_five,
+      zero_six_nine: zero_six_nine
+    } =
+      %{
+        one: &one?/1,
+        four: &four?/1,
+        seven: &seven?/1,
+        eight: &eight?/1,
+        two_three_five: &two_three_five?/1,
+        zero_six_nine: &zero_six_nine?/1
+      }
+      |> Map.map(fn {_, fun} -> Enum.filter(patterns, fun) end)
+      |> Map.map(fn {_, matches} ->
+        if length(matches) == 1 do
+          Enum.at(matches, 0)
+        else
+          matches
+        end
+      end)
+
+    bd = four -- one
+
+    three =
+      Enum.find(
+        two_three_five,
+        fn candidate -> length(candidate -- one) == 3 end
+      )
+
+    two_five = two_three_five -- [three]
+
+    five =
+      Enum.find(
+        two_five,
+        fn candidate -> length(candidate -- bd) == 3 end
+      )
+
+    two = List.first(two_five -- [five])
+
+    six =
+      Enum.find(
+        zero_six_nine,
+        fn candidate -> length(candidate -- one) == 5 end
+      )
+
+    zero_nine = zero_six_nine -- [six]
+
+    nine =
+      Enum.find(
+        zero_nine,
+        fn candidate -> length(candidate -- four) == 2 end
+      )
+
+    zero = List.first(zero_nine -- [nine])
+
+    [zero, one, two, three, four, five, six, seven, eight, nine]
   end
 
   @spec unique?([String.t()]) :: boolean
@@ -169,5 +322,45 @@ defmodule Advent2021.SegmentDisplays do
   """
   def eight?(pattern) do
     length(pattern) == 7
+  end
+
+  @spec two_three_five?([String.t()]) :: boolean
+  @doc """
+  Check if the pattern matches one of the digits 2, 3, or 5.
+
+  ## Examples
+
+      iex> Advent2021.SegmentDisplays.two_three_five?(["c", "d", "e", "f", "g"])
+      true
+
+      iex> Advent2021.SegmentDisplays.two_three_five?(
+      ...>   ["a", "b", "c", "d", "e", "f", "g"]
+      ...> )
+      false
+
+  """
+  def two_three_five?(pattern) do
+    length(pattern) == 5
+  end
+
+  @spec zero_six_nine?([String.t()]) :: boolean
+  @doc """
+  Check if the pattern matches one of the digits 0, 6, or 9.
+
+  ## Examples
+
+      iex> Advent2021.SegmentDisplays.zero_six_nine?(
+      ...>   ["b", "c", "d", "e", "f", "g"]
+      ...> )
+      true
+
+      iex> Advent2021.SegmentDisplays.zero_six_nine?(
+      ...>   ["a", "b", "c", "d", "e", "f", "g"]
+      ...> )
+      false
+
+  """
+  def zero_six_nine?(pattern) do
+    length(pattern) == 6
   end
 end
