@@ -5,6 +5,25 @@ defmodule Advent2021.LavaTubes do
 
   import Advent2021.Reader
 
+  @spec largest_basin_sizes(String.t(), pos_integer) :: [non_neg_integer]
+  @doc """
+  Find the sum of the risk levels of all low points.
+
+  ## Examples
+
+      iex> Advent2021.LavaTubes.largest_basin_sizes("lib/09/example.txt")
+      [14, 9, 9]
+
+  """
+  def largest_basin_sizes(input_path, count \\ 3) do
+    input_path
+    |> parse_input(&parse_heightmap_row/1)
+    |> basins()
+    |> Enum.map(&Enum.count/1)
+    |> Enum.sort(:desc)
+    |> Enum.take(count)
+  end
+
   @spec total_low_point_risk_level(String.t()) :: non_neg_integer
   @doc """
   Find the sum of the risk levels of all low points.
@@ -40,6 +59,154 @@ defmodule Advent2021.LavaTubes do
     input
     |> String.split("", trim: true)
     |> Enum.map(&String.to_integer/1)
+  end
+
+  @spec basins([[non_neg_integer]]) :: [[{non_neg_integer, non_neg_integer}]]
+  @doc """
+  Group the points in the heightmap into basins.
+
+  ## Examples
+
+      iex> Advent2021.LavaTubes.basins([
+      ...>   [2, 1, 9, 9, 9],
+      ...>   [3, 9, 8, 7, 8],
+      ...>   [9, 8, 5, 6, 7],
+      ...>   [8, 7, 6, 7, 8]
+      ...> ])
+      [
+        [
+          {0, 0},
+          {0, 1},
+          {1, 0}
+        ],
+        [
+          {1, 2},
+          {1, 3},
+          {1, 4},
+          {2, 1},
+          {2, 2},
+          {2, 3},
+          {2, 4},
+          {3, 0},
+          {3, 1},
+          {3, 2},
+          {3, 3},
+          {3, 4}
+        ]
+      ]
+
+  """
+  def basins(heightmap) do
+    maxima = local_maxima(heightmap)
+
+    [first_row_basin | remaining_row_basins] =
+      heightmap
+      |> Enum.with_index()
+      |> Enum.map(fn {row, row_index} -> row_basins(row, row_index, maxima) end)
+      |> Enum.reduce([], &Kernel.++(&2, &1))
+
+    remaining_row_basins
+    |> Enum.reduce(
+      [first_row_basin],
+      fn basin, acc -> combine_basins(acc, basin) end
+    )
+  end
+
+  @spec row_basins(
+          [non_neg_integer],
+          non_neg_integer,
+          [{non_neg_integer, non_neg_integer}]
+        ) :: [[{non_neg_integer, non_neg_integer}]]
+  @doc """
+  Find the row and column indices representing local minima.
+
+  ## Examples
+
+      iex> Advent2021.LavaTubes.row_basins([3, 9, 9, 7, 8], 1, [{1, 1}, {1, 2}])
+      [
+        [{1, 0}],
+        [{1, 3}, {1, 4}]
+      ]
+
+  """
+  def row_basins(row, row_index, maxima) do
+    row
+    |> Enum.with_index()
+    |> Enum.chunk_while(
+      [],
+      fn {_, column_index}, chunk ->
+        point = {row_index, column_index}
+
+        if Enum.any?(maxima, &(&1 == point)) do
+          {:cont, chunk, []}
+        else
+          {:cont, chunk ++ [point]}
+        end
+      end,
+      fn chunk -> {:cont, chunk, nil} end
+    )
+    |> Enum.reject(&(length(&1) == 0))
+  end
+
+  @spec combine_basins(
+          [[{non_neg_integer, non_neg_integer}]],
+          [{non_neg_integer, non_neg_integer}]
+        ) :: [[{non_neg_integer, non_neg_integer}]]
+  @doc """
+  Combine adjacent basins together and return the new set of basins.
+
+  ## Examples
+
+      iex> Advent2021.LavaTubes.combine_basins(
+      ...>   [
+      ...>     [{1, 0}],
+      ...>     [{1, 3}, {1, 4}]
+      ...>   ],
+      ...>   [{2, 0}, {2, 1}]
+      ...> )
+      [
+        [{1, 0}, {2, 0}, {2, 1}],
+        [{1, 3}, {1, 4}]
+      ]
+
+      iex> Advent2021.LavaTubes.combine_basins(
+      ...>   [
+      ...>     [{1, 0}],
+      ...>     [{1, 3}, {1, 4}]
+      ...>   ],
+      ...>   [{3, 0}, {3, 1}]
+      ...> )
+      [
+        [{1, 0}],
+        [{1, 3}, {1, 4}],
+        [{3, 0}, {3, 1}]
+      ]
+
+  """
+  def combine_basins(basin_set, basin) do
+    index_to_join =
+      basin_set
+      |> Enum.with_index()
+      |> Enum.find_value(fn {basin_set_basin, index} ->
+        adjacent? =
+          Enum.any?(basin, fn {x, y} ->
+            Enum.any?(basin_set_basin, fn {basin_set_x, basin_set_y} ->
+              (abs(x - basin_set_x) == 1 and y == basin_set_y) or
+                (x == basin_set_x and abs(y - basin_set_y) == 1)
+            end)
+          end)
+
+        if adjacent?, do: index
+      end)
+
+    if index_to_join do
+      basin_set
+      |> Enum.at(index_to_join)
+      |> Kernel.++(basin)
+      |> then(&List.replace_at(basin_set, index_to_join, &1))
+    else
+      basin_set ++ [basin]
+    end
   end
 
   @spec local_minima([[non_neg_integer]]) ::
