@@ -112,6 +112,7 @@ defmodule Advent2021.LavaTubes do
         Enum.map(indices, &{row_index, &1})
       end)
       |> List.flatten()
+      |> MapSet.new()
 
     column_extrema =
       heightmap
@@ -123,11 +124,10 @@ defmodule Advent2021.LavaTubes do
         Enum.map(indices, &{&1, column_index})
       end)
       |> List.flatten()
+      |> MapSet.new()
 
-    (row_extrema ++ column_extrema)
-    |> Enum.frequencies()
-    |> Map.filter(fn {_, count} -> count == 2 end)
-    |> Map.keys()
+    MapSet.intersection(row_extrema, column_extrema)
+    |> MapSet.to_list()
   end
 
   @spec row_local_extrema(
