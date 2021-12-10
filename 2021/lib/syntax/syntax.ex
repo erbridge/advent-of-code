@@ -5,6 +5,41 @@ defmodule Advent2021.Syntax do
 
   import Advent2021.Reader
 
+  @spec autocomplete_score(String.t()) :: [String.t()]
+  @doc """
+  Find autocomplete suggestions for each incomplete line.
+
+  ## Examples
+
+      iex> Advent2021.Syntax.autocomplete_score("lib/10/example.txt")
+      288957
+
+  """
+  def autocomplete_score(input_path) do
+    input_path
+    |> parse_input(&parse_line/1)
+    |> Enum.reject(&error_char/1)
+    |> Enum.map(&autocomplete/1)
+    |> Enum.map(fn {state, result} ->
+      if state == :error do
+        0
+      else
+        result
+        |> Enum.reduce(0, fn char, acc ->
+          acc * 5 +
+            case char do
+              ")" -> 1
+              "]" -> 2
+              "}" -> 3
+              ">" -> 4
+            end
+        end)
+      end
+    end)
+    |> Enum.sort()
+    |> then(&Enum.at(&1, div(length(&1), 2)))
+  end
+
   @spec error_score(String.t()) :: non_neg_integer
   @doc """
   Find the syntax error score.
@@ -140,34 +175,97 @@ defmodule Advent2021.Syntax do
 
   """
   def error_char(line) do
+    {status, result} = autocomplete(line)
+
+    if status == :error do
+      result
+    end
+  end
+
+  @spec autocomplete([String.t()]) :: {:ok, [String.t()]} | {:error, String.t()}
+  @doc """
+  Find the set of characters to complete the line.
+
+  ## Examples
+
+      iex> Advent2021.Syntax.autocomplete([
+      ...>   "[",
+      ...>   "(",
+      ...>   "{",
+      ...>   "(",
+      ...>   "<",
+      ...>   "(",
+      ...>   "(",
+      ...>   ")",
+      ...>   ")",
+      ...>   "[",
+      ...>   "]",
+      ...>   ">",
+      ...>   "[",
+      ...>   "[",
+      ...>   "{",
+      ...>   "[",
+      ...>   "]",
+      ...>   "{",
+      ...>   "<",
+      ...>   "(",
+      ...>   ")",
+      ...>   "<",
+      ...>   ">",
+      ...>   ">"
+      ...> ])
+      {:ok, ["}", "}", "]", "]", ")", "}", ")", "]"]}
+
+  """
+  def autocomplete(line) do
     open_brackets = ["(", "[", "{", "<"]
 
-    line
-    |> Enum.reduce_while({:ok, [], nil}, fn char, {_, stack, last} ->
-      state =
-        cond do
-          Enum.any?(open_brackets, &(&1 == char)) -> :open
-          last == "(" and char != ")" -> :invalid
-          last == "[" and char != "]" -> :invalid
-          last == "{" and char != "}" -> :invalid
-          last == "<" and char != ">" -> :invalid
-          true -> :close
+    {state, result} =
+      line
+      |> Enum.reduce_while({nil, []}, fn char, {_, stack} ->
+        last = List.last(stack)
+
+        state =
+          cond do
+            Enum.any?(open_brackets, &(&1 == char)) -> :open
+            last == "(" and char != ")" -> :invalid
+            last == "[" and char != "]" -> :invalid
+            last == "{" and char != "}" -> :invalid
+            last == "<" and char != ">" -> :invalid
+            true -> :close
+          end
+
+        case state do
+          :open ->
+            {:cont, {state, stack ++ [char]}}
+
+          :close ->
+            new_stack = Enum.drop(stack, -1)
+
+            {:cont, {state, new_stack}}
+
+          :invalid ->
+            {:halt, {state, char}}
         end
+      end)
 
-      case state do
-        :open ->
-          {:cont, {:ok, stack ++ [char], char}}
-
-        :close ->
-          new_stack = Enum.drop(stack, -1)
-          new_last = List.last(new_stack)
-
-          {:cont, {:ok, new_stack, new_last}}
-
-        :invalid ->
-          {:halt, {:error, stack, char}}
-      end
-    end)
-    |> then(fn {status, _, char} -> if status == :ok, do: nil, else: char end)
+    if state == :invalid do
+      {:error, result}
+    else
+      result
+      |> Enum.reverse()
+      |> Enum.reduce([], fn char, acc ->
+        acc ++
+          [
+            case char do
+              "(" -> ")"
+              "[" -> "]"
+              "{" -> "}"
+              "<" -> ">"
+            end
+          ]
+      end)
+      |> then(&{:ok, &1})
+    end
   end
 end
