@@ -97,115 +97,80 @@ defmodule Advent2021.LavaTubes do
 
   """
   def basins(heightmap) do
-    maxima = local_maxima(heightmap)
-
-    [first_row_basin | remaining_row_basins] =
-      heightmap
-      |> Enum.with_index()
-      |> Enum.map(fn {row, row_index} -> row_basins(row, row_index, maxima) end)
-      |> Enum.reduce([], &Kernel.++(&2, &1))
-
-    remaining_row_basins
-    |> Enum.reduce(
-      [first_row_basin],
-      fn basin, acc -> combine_basins(acc, basin) end
-    )
+    local_minima(heightmap)
+    |> Enum.map(&basin(heightmap, [&1]))
   end
 
-  @spec row_basins(
-          [non_neg_integer],
-          non_neg_integer,
-          [{non_neg_integer, non_neg_integer}]
-        ) :: [[{non_neg_integer, non_neg_integer}]]
+  @spec basin(
+          [[non_neg_integer]],
+          [{non_neg_integer, non_neg_integer}],
+          [{non_neg_integer, non_neg_integer}] | nil
+        ) :: [{non_neg_integer, non_neg_integer}]
   @doc """
-  Find the row and column indices representing local minima.
+  Expand the basin around the given basis.
 
   ## Examples
 
-      iex> Advent2021.LavaTubes.row_basins([3, 9, 9, 7, 8], 1, [{1, 1}, {1, 2}])
+      iex> Advent2021.LavaTubes.basin(
+      ...>   [
+      ...>     [2, 1, 9, 9, 9],
+      ...>     [3, 9, 8, 7, 8],
+      ...>     [9, 8, 5, 6, 7],
+      ...>     [8, 7, 6, 7, 8]
+      ...>   ],
+      ...>   [{2, 2}]
+      ...> )
       [
-        [{1, 0}],
-        [{1, 3}, {1, 4}]
+        {1, 2},
+        {1, 3},
+        {1, 4},
+        {2, 1},
+        {2, 2},
+        {2, 3},
+        {2, 4},
+        {3, 0},
+        {3, 1},
+        {3, 2},
+        {3, 3},
+        {3, 4}
       ]
 
   """
-  def row_basins(row, row_index, maxima) do
-    row
-    |> Enum.with_index()
-    |> Enum.chunk_while(
-      [],
-      fn {_, column_index}, chunk ->
-        point = {row_index, column_index}
+  def basin(heightmap, collection, added \\ nil)
 
-        if Enum.any?(maxima, &(&1 == point)) do
-          {:cont, chunk, []}
-        else
-          {:cont, chunk ++ [point]}
-        end
-      end,
-      fn chunk -> {:cont, chunk, nil} end
-    )
-    |> Enum.reject(&(length(&1) == 0))
+  def basin(heightmap, collection, nil) do
+    basin(heightmap, collection, collection)
   end
 
-  @spec combine_basins(
-          [[{non_neg_integer, non_neg_integer}]],
-          [{non_neg_integer, non_neg_integer}]
-        ) :: [[{non_neg_integer, non_neg_integer}]]
-  @doc """
-  Combine adjacent basins together and return the new set of basins.
-
-  ## Examples
-
-      iex> Advent2021.LavaTubes.combine_basins(
-      ...>   [
-      ...>     [{1, 0}],
-      ...>     [{1, 3}, {1, 4}]
-      ...>   ],
-      ...>   [{2, 0}, {2, 1}]
-      ...> )
-      [
-        [{1, 0}, {2, 0}, {2, 1}],
-        [{1, 3}, {1, 4}]
-      ]
-
-      iex> Advent2021.LavaTubes.combine_basins(
-      ...>   [
-      ...>     [{1, 0}],
-      ...>     [{1, 3}, {1, 4}]
-      ...>   ],
-      ...>   [{3, 0}, {3, 1}]
-      ...> )
-      [
-        [{1, 0}],
-        [{1, 3}, {1, 4}],
-        [{3, 0}, {3, 1}]
-      ]
-
-  """
-  def combine_basins(basin_set, basin) do
-    index_to_join =
-      basin_set
-      |> Enum.with_index()
-      |> Enum.find_value(fn {basin_set_basin, index} ->
-        adjacent? =
-          Enum.any?(basin, fn {x, y} ->
-            Enum.any?(basin_set_basin, fn {basin_set_x, basin_set_y} ->
-              (abs(x - basin_set_x) == 1 and y == basin_set_y) or
-                (x == basin_set_x and abs(y - basin_set_y) == 1)
-            end)
-          end)
-
-        if adjacent?, do: index
+  def basin(heightmap, collection, added) do
+    new =
+      added
+      |> Enum.map(fn {r, c} ->
+        [
+          {r - 1, c},
+          {r + 1, c},
+          {r, c - 1},
+          {r, c + 1}
+        ]
+        |> Enum.reject(fn {n_r, n_c} -> n_r < 0 or n_c < 0 end)
       end)
+      |> List.flatten()
+      |> Enum.uniq()
+      |> Enum.filter(fn {n_r, n_c} ->
+        row = Enum.at(heightmap, n_r)
 
-    if index_to_join do
-      basin_set
-      |> Enum.at(index_to_join)
-      |> Kernel.++(basin)
-      |> then(&List.replace_at(basin_set, index_to_join, &1))
+        if row do
+          height = Enum.at(row, n_c)
+
+          height && height < 9
+        end
+      end)
+      |> Kernel.--(collection)
+
+    if length(new) == 0 do
+      Enum.sort(collection)
     else
-      basin_set ++ [basin]
+      basin(heightmap, collection ++ new, new)
     end
   end
 
@@ -227,26 +192,6 @@ defmodule Advent2021.LavaTubes do
   """
   def local_minima(heightmap) do
     local_extrema(heightmap, &local_minimum?/1)
-  end
-
-  @spec local_maxima([[non_neg_integer]]) ::
-          [{non_neg_integer, non_neg_integer}]
-  @doc """
-  Find the row and column indices representing local maxima.
-
-  ## Examples
-
-      iex> Advent2021.LavaTubes.local_maxima([
-      ...>   [2, 1, 9, 9, 9],
-      ...>   [3, 9, 8, 7, 8],
-      ...>   [9, 8, 5, 6, 7],
-      ...>   [8, 7, 6, 7, 8]
-      ...> ])
-      [{0, 2}, {0, 3}, {0, 4}, {1, 1}, {2, 0}]
-
-  """
-  def local_maxima(heightmap) do
-    local_extrema(heightmap, &local_maximum?/1)
   end
 
   @spec local_extrema(
@@ -345,29 +290,6 @@ defmodule Advent2021.LavaTubes do
   """
   def local_minimum?([left, mid, right]) do
     left > mid and mid < right
-  end
-
-  @spec local_maximum?([non_neg_integer]) :: boolean
-  @doc """
-  Check if the midpoint is a local maximum.
-
-  ## Examples
-
-      iex> Advent2021.LavaTubes.local_maximum?([3, 4, 3])
-      true
-
-      iex> Advent2021.LavaTubes.local_maximum?([4, 3, 4])
-      false
-
-      iex> Advent2021.LavaTubes.local_maximum?([4, 3, 2])
-      false
-
-      iex> Advent2021.LavaTubes.local_maximum?([9, 9, 9])
-      true
-
-  """
-  def local_maximum?([left, mid, right]) do
-    mid == 9 or (left < mid and mid > right)
   end
 
   @spec risk_level(
