@@ -5,6 +5,23 @@ defmodule Advent2021.Octopuses do
 
   import Advent2021.Reader
 
+  @spec steps_to_synchronize(String.t()) :: non_neg_integer
+  @doc """
+  Count the number of octopus flashes after a number of steps
+
+  ## Examples
+
+      iex> Advent2021.Octopuses.steps_to_synchronize("lib/11/example.txt")
+      195
+
+  """
+  def steps_to_synchronize(input_path) do
+    input_path
+    |> parse_input(&parse_row/1)
+    |> step_until(&synchronized?/1)
+    |> elem(2)
+  end
+
   @spec count_flashes(String.t(), pos_integer) :: non_neg_integer
   @doc """
   Count the number of octopus flashes after a number of steps
@@ -83,6 +100,52 @@ defmodule Advent2021.Octopuses do
       |> cascade_flash()
 
     step(new_grid, steps - 1, flash_count + new_flash_count)
+  end
+
+  @spec step_until(
+          [[non_neg_integer]],
+          ([[non_neg_integer]] -> boolean),
+          non_neg_integer
+        ) :: {[[non_neg_integer]], non_neg_integer, pos_integer}
+  @doc """
+  Step through octopus flashes until the condition is met.
+
+  ## Examples
+
+      iex> Advent2021.Octopuses.step_until(
+      ...>   [
+      ...>     [1, 1, 1, 1, 1],
+      ...>     [1, 9, 9, 9, 1],
+      ...>     [1, 9, 1, 9, 1],
+      ...>     [1, 9, 9, 9, 1],
+      ...>     [1, 1, 1, 1, 1]
+      ...>   ],
+      ...>   &Advent2021.Octopuses.synchronized?/1
+      ...>)
+      {
+        [
+          [0, 0, 0, 0, 0],
+          [0, 0, 0, 0, 0],
+          [0, 0, 0, 0, 0],
+          [0, 0, 0, 0, 0],
+          [0, 0, 0, 0, 0]
+        ],
+        25,
+        6
+      }
+
+  """
+  def step_until(grid, ender, flash_count \\ 0, steps \\ 0) do
+    {new_grid, new_flash_count} =
+      grid
+      |> Enum.map(fn row -> Enum.map(row, &(&1 + 1)) end)
+      |> cascade_flash()
+
+    if ender.(new_grid) do
+      {new_grid, new_flash_count, steps + 1}
+    else
+      step_until(new_grid, ender, flash_count + new_flash_count, steps + 1)
+    end
   end
 
   @spec cascade_flash(
@@ -261,5 +324,36 @@ defmodule Advent2021.Octopuses do
         List.replace_at(grid_acc, r, new_row)
       end
     )
+  end
+
+  @spec synchronized?([[non_neg_integer]]) :: boolean
+  @doc """
+  Check if all octopuses just flashed in sync.
+
+  ## Examples
+
+  iex> Advent2021.Octopuses.synchronized?([
+  ...>   [1, 1, 1, 1, 1],
+  ...>   [1, 9, 9, 9, 1],
+  ...>   [1, 9, 1, 9, 1],
+  ...>   [1, 9, 9, 9, 1],
+  ...>   [1, 1, 1, 1, 1]
+  ...> ])
+  false
+
+  iex> Advent2021.Octopuses.synchronized?([
+  ...>   [0, 0, 0, 0, 0],
+  ...>   [0, 0, 0, 0, 0],
+  ...>   [0, 0, 0, 0, 0],
+  ...>   [0, 0, 0, 0, 0],
+  ...>   [0, 0, 0, 0, 0]
+  ...> ])
+  true
+
+  """
+  def synchronized?(grid) do
+    grid
+    |> List.flatten()
+    |> Enum.all?(&(&1 == 0))
   end
 end
