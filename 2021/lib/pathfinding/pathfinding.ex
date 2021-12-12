@@ -182,16 +182,74 @@ defmodule Advent2021.Pathfinding do
       [path]
     else
       connections
-      |> Enum.filter(fn {origin, _} -> origin == last end)
-      |> Enum.reject(fn {_, destination} ->
+      |> Enum.filter(&traversable?(&1, path))
+      |> Enum.map(fn {_, destination} -> path ++ [destination] end)
+    end
+  end
+
+  @spec traversable?({atom, atom}, [atom]) :: boolean
+  @doc """
+  Check if a destination cave is traversable.
+
+  ## Examples
+
+      iex> Advent2021.Pathfinding.traversable?(
+      ...>   {:A, :b},
+      ...>   [:start, :A, :b, :A]
+      ...> )
+      false
+
+      iex> Advent2021.Pathfinding.traversable?(
+      ...>   {:A, :c},
+      ...>   [:start, :A, :b, :A]
+      ...> )
+      true
+
+      iex> Advent2021.Pathfinding.traversable?(
+      ...>   {:A, :start},
+      ...>   [:start, :A, :b, :A]
+      ...> )
+      false
+
+      iex> Advent2021.Pathfinding.traversable?(
+      ...>   {:A, :end},
+      ...>   [:start, :A, :b, :A]
+      ...> )
+      true
+
+      iex> Advent2021.Pathfinding.traversable?(
+      ...>   {:b, :start},
+      ...>   [:start, :A, :b, :A]
+      ...> )
+      false
+
+      iex> Advent2021.Pathfinding.traversable?(
+      ...>   {:b, :end},
+      ...>   [:start, :A, :b, :A]
+      ...> )
+      false
+
+  """
+  def traversable?(connection, path) do
+    last = List.last(path)
+
+    case connection do
+      {origin, :start} when origin == last ->
+        false
+
+      {origin, :end} when origin == last ->
+        true
+
+      {origin, destination} when origin == last ->
         small? =
           destination
           |> Atom.to_string()
           |> then(&(String.downcase(&1) == &1))
 
-        small? and Enum.any?(path, &(&1 == destination))
-      end)
-      |> Enum.map(fn {_, destination} -> path ++ [destination] end)
+        not (small? and Enum.any?(path, &(&1 == destination)))
+
+      _ ->
+        false
     end
   end
 end
