@@ -34,6 +34,56 @@ defmodule Advent2021.FoldingTransparency do
     |> Enum.count()
   end
 
+  @spec draw_dots_after_folding(String.t(), String.t()) :: String.t()
+  @doc """
+  Draw the dots after folding.
+
+  ## Examples
+
+      iex> Advent2021.FoldingTransparency.draw_dots_after_folding(
+      ...>   "lib/13/example_dots.txt",
+      ...>   "lib/13/example_folds.txt"
+      ...> )
+      ".....
+      .   .
+      .   .
+      .   .
+      ....."
+
+  """
+  def draw_dots_after_folding(input_dots_path, input_folds_path) do
+    dots =
+      input_dots_path
+      |> parse_input(&parse_dot/1)
+
+    folds =
+      input_folds_path
+      |> parse_input(&parse_fold/1)
+
+    folded_dots = fold_all(dots, folds)
+
+    {max_x, _} = Enum.max_by(folded_dots, &elem(&1, 0))
+    {_, max_y} = Enum.max_by(folded_dots, &elem(&1, 1))
+
+    grid =
+      nil
+      |> List.duplicate(max_x + 1)
+      |> List.duplicate(max_y + 1)
+
+    folded_dots
+    |> Enum.reduce(grid, fn {x, y}, grid_acc ->
+      row =
+        grid_acc
+        |> Enum.at(y)
+        |> List.replace_at(x, ".")
+
+      List.replace_at(grid_acc, y, row)
+    end)
+    |> Enum.map(fn row -> Enum.map(row, &if(&1, do: &1, else: " ")) end)
+    |> Enum.map(&Enum.join/1)
+    |> Enum.join("\n")
+  end
+
   @spec parse_dot(String.t()) :: dot
   @doc """
   Parse a dot.
@@ -74,6 +124,59 @@ defmodule Advent2021.FoldingTransparency do
         &1 |> List.last() |> String.to_integer()
       }
     )
+  end
+
+  @spec fold_all([dot], [fold]) :: [dot]
+  @doc """
+  Fold the paper according to each fold in order.
+
+  ## Examples
+
+      iex> Advent2021.FoldingTransparency.fold_all(
+      ...>   [
+      ...>     {6, 10},
+      ...>     {0, 14},
+      ...>     {9, 10},
+      ...>     {0, 3},
+      ...>     {10, 4},
+      ...>     {4, 11},
+      ...>     {6, 0},
+      ...>     {6, 12},
+      ...>     {4, 1},
+      ...>     {0, 13},
+      ...>     {10, 12},
+      ...>     {3, 4},
+      ...>     {3, 0},
+      ...>     {8, 4},
+      ...>     {1, 10},
+      ...>     {2, 14},
+      ...>     {8, 10},
+      ...>     {9, 0}
+      ...>   ],
+      ...>   [y: 7, x: 5]
+      ...> )
+      [
+        {4, 4},
+        {0, 0},
+        {1, 4},
+        {0, 3},
+        {0, 4},
+        {4, 3},
+        {4, 0},
+        {4, 2},
+        {4, 1},
+        {0, 1},
+        {0, 2},
+        {3, 4},
+        {3, 0},
+        {2, 4},
+        {2, 0},
+        {1, 0}
+      ]
+
+  """
+  def fold_all(dots, folds) do
+    Enum.reduce(folds, dots, fn fold, dots_acc -> fold(dots_acc, fold) end)
   end
 
   @spec fold([dot], fold) :: [dot]
