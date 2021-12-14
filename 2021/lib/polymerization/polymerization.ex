@@ -19,9 +19,23 @@ defmodule Advent2021.Polymerization do
       iex> Advent2021.Polymerization.min_max_elements_after_polymerization(
       ...>   "lib/14/example_template.txt",
       ...>   "lib/14/example_rules.txt",
+      ...>   4
+      ...> )
+      {5, 23}
+
+      iex> Advent2021.Polymerization.min_max_elements_after_polymerization(
+      ...>   "lib/14/example_template.txt",
+      ...>   "lib/14/example_rules.txt",
       ...>   10
       ...> )
       {161, 1749}
+
+      iex> Advent2021.Polymerization.min_max_elements_after_polymerization(
+      ...>   "lib/14/example_template.txt",
+      ...>   "lib/14/example_rules.txt",
+      ...>   40
+      ...> )
+      {3849876073, 2192039569602}
 
   """
   def min_max_elements_after_polymerization(
@@ -34,13 +48,29 @@ defmodule Advent2021.Polymerization do
       |> parse_input(&parse_template/1)
       |> List.first()
 
+    pairs =
+      template
+      |> Enum.chunk_every(2, 1, :discard)
+      |> Enum.map(&Enum.join/1)
+      |> Enum.sort()
+      |> Enum.frequencies()
+
     rules =
       input_rules_path
       |> parse_input(&parse_rule/1)
+      |> Enum.sort()
       |> Map.new()
 
-    polymerize(template, rules, steps)
-    |> Enum.frequencies()
+    polymerize(pairs, rules, steps)
+    |> Map.to_list()
+    |> Enum.reduce(
+      %{List.last(template) => 1},
+      fn {pair, count}, acc ->
+        pair
+        |> String.first()
+        |> then(&Map.update(acc, &1, count, fn value -> value + count end))
+      end
+    )
     |> Map.values()
     |> Enum.sort()
     |> then(&{List.first(&1), List.last(&1)})
@@ -78,83 +108,116 @@ defmodule Advent2021.Polymerization do
   end
 
   @spec polymerize(
-          [String.t()],
+          %{String.t() => non_neg_integer},
           %{String.t() => String.t()},
           non_neg_integer
-        ) :: [String.t()]
+        ) :: %{String.t() => non_neg_integer}
   @doc """
   Parse a connection.
 
   ## Examples
 
       iex> Advent2021.Polymerization.polymerize(
-      ...>   ["N", "N", "C", "B"],
       ...>   %{
-      ...>     "CH" => "B",
-      ...>     "HH" => "N",
-      ...>     "CB" => "H",
-      ...>     "NH" => "C",
-      ...>     "HB" => "C",
-      ...>     "HC" => "B",
-      ...>     "HN" => "C",
-      ...>     "NN" => "C",
-      ...>     "BH" => "H",
-      ...>     "NC" => "B",
-      ...>     "NB" => "B",
-      ...>     "BN" => "B",
+      ...>     "CB" => 1,
+      ...>     "NC" => 1,
+      ...>     "NN" => 1
+      ...>   },
+      ...>   %{
       ...>     "BB" => "N",
       ...>     "BC" => "B",
+      ...>     "BH" => "H",
+      ...>     "BN" => "B",
+      ...>     "CB" => "H",
       ...>     "CC" => "N",
-      ...>     "CN" => "C"
+      ...>     "CH" => "B",
+      ...>     "CN" => "C",
+      ...>     "HB" => "C",
+      ...>     "HC" => "B",
+      ...>     "HH" => "N",
+      ...>     "HN" => "C",
+      ...>     "NB" => "B",
+      ...>     "NC" => "B",
+      ...>     "NH" => "C",
+      ...>     "NN" => "C"
       ...>   },
       ...>   1
       ...> )
-      ["N", "C", "N", "B", "C", "H", "B"]
+      %{
+        "BC" => 1,
+        "CH" => 1,
+        "CN" => 1,
+        "HB" => 1,
+        "NB" => 1,
+        "NC" => 1
+      }
 
       iex> Advent2021.Polymerization.polymerize(
-      ...>   ["N", "N", "C", "B"],
       ...>   %{
-      ...>     "CH" => "B",
-      ...>     "HH" => "N",
-      ...>     "CB" => "H",
-      ...>     "NH" => "C",
-      ...>     "HB" => "C",
-      ...>     "HC" => "B",
-      ...>     "HN" => "C",
-      ...>     "NN" => "C",
-      ...>     "BH" => "H",
-      ...>     "NC" => "B",
-      ...>     "NB" => "B",
-      ...>     "BN" => "B",
+      ...>     "CB" => 1,
+      ...>     "NC" => 1,
+      ...>     "NN" => 1
+      ...>   },
+      ...>   %{
       ...>     "BB" => "N",
       ...>     "BC" => "B",
+      ...>     "BH" => "H",
+      ...>     "BN" => "B",
+      ...>     "CB" => "H",
       ...>     "CC" => "N",
-      ...>     "CN" => "C"
+      ...>     "CH" => "B",
+      ...>     "CN" => "C",
+      ...>     "HB" => "C",
+      ...>     "HC" => "B",
+      ...>     "HH" => "N",
+      ...>     "HN" => "C",
+      ...>     "NB" => "B",
+      ...>     "NC" => "B",
+      ...>     "NH" => "C",
+      ...>     "NN" => "C"
       ...>   },
       ...>   2
       ...> )
-      ["N", "B", "C", "C", "N", "B", "B", "B", "C", "B", "H", "C", "B"]
+      %{
+        "BB" => 2,
+        "BC" => 2,
+        "BH" => 1,
+        "CB" => 2,
+        "CC" => 1,
+        "CN" => 1,
+        "HC" => 1,
+        "NB" => 2
+      }
 
   """
-  def polymerize(template, _, 0) do
-    template
+  def polymerize(pairs, _, 0) do
+    pairs
+    |> Map.to_list()
+    |> Enum.sort()
+    |> Map.new()
   end
 
-  def polymerize(template, rules, steps) do
-    template
-    |> Enum.chunk_every(2, 1)
-    |> Enum.flat_map(fn pair ->
-      insertion =
-        pair
-        |> Enum.join()
-        |> then(&Map.get(rules, &1))
+  def polymerize(pairs, rules, steps) do
+    pairs
+    |> Map.to_list()
+    |> Enum.reduce(
+      %{},
+      fn {pair, count}, acc ->
+        insertion = Map.get(rules, pair)
 
-      if insertion do
-        [List.first(pair), insertion]
-      else
-        [List.first(pair)]
+        acc
+        |> Map.update(
+          String.first(pair) <> insertion,
+          count,
+          fn value -> value + count end
+        )
+        |> Map.update(
+          insertion <> String.last(pair),
+          count,
+          fn value -> value + count end
+        )
       end
-    end)
+    )
     |> polymerize(rules, steps - 1)
   end
 end
