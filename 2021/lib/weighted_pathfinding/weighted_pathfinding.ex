@@ -5,7 +5,10 @@ defmodule Advent2021.WeightedPathfinding do
 
   import Advent2021.Reader
 
-  @spec lowest_risk(String.t()) :: non_neg_integer
+  @spec lowest_risk(
+          String.t(),
+          tile: {pos_integer, pos_integer}
+        ) :: non_neg_integer
   @doc """
   Find the risk of the lowest risk path.
 
@@ -14,22 +17,57 @@ defmodule Advent2021.WeightedPathfinding do
       iex> Advent2021.WeightedPathfinding.lowest_risk("lib/15/example.txt")
       40
 
-  """
-  def lowest_risk(input_path) do
-    risks =
-      input_path
-      |> parse_input(&parse_row/1)
+      iex> Advent2021.WeightedPathfinding.lowest_risk(
+      ...>   "lib/15/example.txt",
+      ...>   tile: {5, 5}
+      ...> )
+      315
 
-    width = risks |> List.first() |> length()
-    height = length(risks)
+  """
+  def lowest_risk(input_path, [tile: tile] \\ [tile: {1, 1}]) do
+    risk_levels = parse_risk_levels(input_path, tile)
+
+    width = risk_levels |> List.first() |> length()
+    height = length(risk_levels)
 
     lowest_cost_path(
-      risks,
+      risk_levels,
       {width, height},
       {width - 1, height - 1},
       [{0, 0, {0, 0}}],
       MapSet.new()
     )
+  end
+
+  @spec parse_risk_levels(
+          String.t(),
+          {pos_integer, pos_integer}
+        ) :: [non_neg_integer]
+  @doc """
+  Parse risk levels as tiles.
+  """
+  def parse_risk_levels(input_path, {tile_x, tile_y}) do
+    wrap_risk = fn risk, index -> rem(risk + index - 1, 9) + 1 end
+
+    input_path
+    |> parse_input(&parse_row/1)
+    |> Enum.map(fn row ->
+      row
+      |> List.duplicate(tile_x)
+      |> Enum.with_index()
+      |> Enum.reduce([], fn {row_section, index}, acc ->
+        row_section
+        |> Enum.map(fn risk -> wrap_risk.(risk, index) end)
+        |> then(&(acc ++ &1))
+      end)
+    end)
+    |> List.duplicate(tile_y)
+    |> Enum.with_index()
+    |> Enum.reduce([], fn {grid_section, index}, acc ->
+      grid_section
+      |> Enum.map(&Enum.map(&1, fn risk -> wrap_risk.(risk, index) end))
+      |> then(&(acc ++ &1))
+    end)
   end
 
   @spec parse_row(String.t()) :: [non_neg_integer]
